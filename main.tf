@@ -68,7 +68,7 @@ resource "scaleway_container" "main" {
   port            = 1337
   cpu_limit       = 1120
   memory_limit    = 4096
-  min_scale       = 0
+  min_scale       = 1
   max_scale       = 5
   timeout         = 600
   max_concurrency = 80
