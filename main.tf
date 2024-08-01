@@ -4,7 +4,7 @@ terraform {
     organization = "societe-numerique"
 
     workspaces {
-      prefix = "strapi-"
+      prefix = "content-management-system-"
     }
   }
 
@@ -45,7 +45,7 @@ variable "ADMIN_PASSWORD" {
 }
 
 locals {
-  appName = "my-blog"
+  appName = "content-management-system"
   secrets = ["app_keys", "api_token_salt", "admin_jwt_secret", "transfer_token_salt", "jwt_secret"]
 }
 
@@ -56,15 +56,15 @@ resource "random_bytes" "generated_secrets" {
 
 resource "scaleway_container_namespace" "main" {
   name        = local.appName
-  description = "Namespace created for full serverless Strapi blog deployment"
+  description = "Namespace created for full serverless Website Content management System deployment"
   project_id  = var.DEFAULT_PROJECT_ID
 }
 
 resource "scaleway_container" "main" {
   name            = local.appName
-  description     = "Container for Strapi blog"
+  description     = "Container for Website Content management System"
   namespace_id    = scaleway_container_namespace.main.id
-  registry_image  = "${var.REGISTRY_ENDPOINT}/my-strapi-blog:latest"
+  registry_image  = "${var.REGISTRY_ENDPOINT}/content-management-system:latest"
   port            = 1337
   cpu_limit       = 1120
   memory_limit    = 4096
@@ -104,7 +104,7 @@ resource "scaleway_iam_application" "app" {
 resource "scaleway_iam_policy" "db_access" {
   name            = "${local.appName}-policy"
   organization_id = var.DEFAULT_ORGANIZATION_ID
-  description     = "Gives tutorial Strapi blog access to Serverless SQL Database"
+  description     = "Gives Website Content management System access to Serverless SQL Database"
   application_id  = scaleway_iam_application.app.id
   rule {
     project_ids          = ["${var.DEFAULT_PROJECT_ID}"]
@@ -124,7 +124,6 @@ resource "scaleway_sdb_sql_database" "database" {
 }
 
 output "database_connection_string" {
-  // Output as an example, you can give this string to your application
   value = format("postgres://%s:%s@%s",
     scaleway_iam_application.app.id,
     scaleway_iam_api_key.api_key.secret_key,
@@ -134,7 +133,12 @@ output "database_connection_string" {
 }
 
 output "container_url" {
-  // Output as an example, you can give this string to your application
   value     = scaleway_container.main.domain_name
   sensitive = false
 }
+
+output "container_id" {
+  value     = scaleway_container.main.id
+  sensitive = false
+}
+
