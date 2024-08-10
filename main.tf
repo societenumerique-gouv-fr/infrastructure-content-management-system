@@ -54,6 +54,15 @@ resource "random_bytes" "generated_secrets" {
   length   = 16
 }
 
+resource "scaleway_object_bucket" "media_library_bucket" {
+  name = "${local.appName}-media-library"
+}
+
+resource "scaleway_object_bucket_acl" "media_library_bucket_acl" {
+  bucket = scaleway_object_bucket.media_library_bucket.id
+  acl    = "public-read"
+}
+
 resource "scaleway_container_namespace" "main" {
   name        = local.appName
   description = "Namespace created for full serverless Website Content management System deployment"
@@ -84,8 +93,12 @@ resource "scaleway_container" "main" {
     "DATABASE_PORT"     = trimprefix(regex(":[0-9]{1,5}", scaleway_sdb_sql_database.database.endpoint), ":"),
     "DATABASE_SSL"      = "true",
     "ADMIN_EMAIL"       = "${var.ADMIN_EMAIL}"
+    "BUCKET_NAME"       = scaleway_object_bucket.media_library_bucket.name
+    "BUCKET_REGION"     = scaleway_object_bucket.media_library_bucket.region
   }
   secret_environment_variables = {
+    "BUCKET_ACCESS_KEY"   = scaleway_iam_api_key.api_key.access_key
+    "BUCKET_SECRET_KEY"   = scaleway_iam_api_key.api_key.secret_key
     "DATABASE_PASSWORD"   = scaleway_iam_api_key.api_key.secret_key,
     "ADMIN_PASSWORD"      = "${var.ADMIN_PASSWORD}",
     "APP_KEYS"            = random_bytes.generated_secrets["app_keys"].base64,
