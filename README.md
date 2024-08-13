@@ -1,8 +1,8 @@
-# Client infrastructure
+# Content Management System infrastructure
 
 ## About
 
-Strapi infrastructure describes resources involved in cms part of [société numérique website](https://societenumerique.gouv.fr/).
+Content Management System infrastructure describes resources involved in cms part of [société numérique website](https://societenumerique.gouv.fr/).
 
 > This repository is NOT required for local development.
 
@@ -94,19 +94,61 @@ Simply push the changes to the `main` branch, to apply the next state of the inf
 #### CI
 
 - [Github Actions](https://docs.github.com/en/actions) is the continuous integration and deployment tool provided by GitHub
-  - Deployment history is available [under Actions tab](https://github.com/marc-gavanier/marc-gavanier-client-infrastructure/actions)
+  - Deployment history is available [under Actions tab](https://github.com/societenumerique-gouv-fr/infrastructure-content-management-system/actions)
 - Repository secrets:
-  - `TF_API_TOKEN`: Terraform Cloud API token which allows the CI to operate actions on Terraform Cloud
+  - `TF_API_TOKEN`: Terraform Cloud API token which allows the CI to operate actions on Terraform Cloud, you can create a `Team API Token` in your Terraform Cloud Workspace `Settings` under `Teams` menu. 
 
 #### Deployment
 
 - [Terraform Cloud](https://app.terraform.io/) is a cloud platform provided by HashiCorp to host Terraform infrastructure state and apply changes
-  - Organization : [marc-gavanier](https://app.terraform.io/app/marc-gavanier/workspaces)
-  - Workspaces : `marc-gavanier-client-*`
-    - [marc-gavanier-client-production](https://app.terraform.io/app/marc-gavanier/workspaces/marc-gavanier-client-production)
-- [AWS](https://aws.amazon.com/) is a cloud provider platform provided by Amazon
-  - User : `marc-gavanier.infrastructure.client`
-  - Group : `client.deployer`
+  - Organization: [societenumerique](https://app.terraform.io/app/societenumerique/workspaces)
+  - Workspaces: `content-management-system-*`
+    - [content-management-system-production](https://app.terraform.io/app/societenumerique/workspaces/content-management-system-production)
+    - Variables:
+      - `ADMIN_EMAIL` `terraform` Strapi administrator email: any email you want to log into Strapi admin panel
+      - `ADMIN_PASSWORD` `terraform` `sensitive` Strapi administrator password: A secure password you will need to log into Strapi admin panel
+      - `DEFAULT_ORGANIZATION_ID` `terraform` Scaleway organization id: [available in organization dashboard settings](https://console.scaleway.com/organization/settings)
+      - `DEFAULT_PROJECT_ID` `terraform` Scaleway project id: [available in Societe Numerique project dashboard settings](https://console.scaleway.com/project/settings)
+      - `REGISTRY_ENDPOINT` `terraform` Scaleway registry endpoint: get the endpoint after [creating docker registry and push the initial image](#create-docker-registry-and-push-the-initial-image)
+      - `SCW_ACCESS_KEY` `env` Scaleway access key: [generate API key for your user](https://console.scaleway.com/iam/users)
+      - `SCW_SECRET_KEY` `env` `sensitive` Scaleway secret key: [generate API key for your user](https://console.scaleway.com/iam/users)
+- [Scaleway](https://console.scaleway.com/) is a cloud provider platform provided by Scaleway
+  - Organization : Agence nationale de la cohésion des territoires
+  - Project: Societe Numerique
+
+#### Create docker registry and push the initial image
+
+> You need to complete this actions before the first run on the CI in order to get a ready to use docker registry endpoint with a first image ready to deploy.
+
+Initialize scaleway CLI using Scaleway access and secret key you generated with the API key for your user:
+```bash
+scw init
+```
+Run the command below in a terminal to export your API access and secret keys as environment variables:
+```bash
+export SCW_ACCESS_KEY=$(scw config get access-key)
+export SCW_SECRET_KEY=$(scw config get secret-key)
+```
+Go in initialized `content-management-system` project (you should be able to run it locally) and run:
+```bash
+docker build -t content-management-system .
+```
+
+Run the following command to create a Container Registry namespace and export its endpoint as a variable:
+```bash
+export REGISTRY_ENDPOINT=$(scw registry namespace create -o json | jq -r '.endpoint')
+```
+
+Run the following command to log in to your Container Registry:
+```bash
+docker login $REGISTRY_ENDPOINT -u nologin --password-stdin <<< "$SCW_SECRET_KEY"
+```
+
+Tag and push your container image to your Container Registry namespace:
+```bash
+docker tag content-management-system:latest $REGISTRY_ENDPOINT/content-management-system:latest
+docker push $REGISTRY_ENDPOINT/content-management-system:latest
+```
 
 ## Licence
 

@@ -1,7 +1,7 @@
 terraform {
   backend "remote" {
     hostname     = "app.terraform.io"
-    organization = "societe-numerique"
+    organization = "societenumerique"
 
     workspaces {
       prefix = "content-management-system-"
@@ -55,7 +55,7 @@ resource "random_bytes" "generated_secrets" {
 }
 
 resource "scaleway_object_bucket" "media_library_bucket" {
-  name = "${local.appName}-media-library"
+  name = "${local.appName}-media"
 }
 
 resource "scaleway_object_bucket_acl" "media_library_bucket_acl" {
