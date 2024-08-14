@@ -19,27 +19,6 @@ terraform {
   required_version = ">= 0.13"
 }
 
-variable "REGISTRY_ENDPOINT" {
-  type        = string
-  description = "Container Registry endpoint where your application container is stored"
-}
-
-variable "DEFAULT_PROJECT_ID" {
-  type        = string
-  description = "Project ID where your resources will be created"
-}
-
-variable "DEFAULT_ORGANIZATION_ID" {
-  type        = string
-  description = "Organization ID where project is hosted"
-}
-
-variable "DEFAULT_APPLICATION_ID" {
-  type        = string
-  description = "Application ID where policy need to be created"
-}
-
-
 variable "ADMIN_EMAIL" {
   type        = string
   description = "Strapi administrator email. Will be created at each container start."
@@ -48,6 +27,26 @@ variable "ADMIN_EMAIL" {
 variable "ADMIN_PASSWORD" {
   type        = string
   description = "Strapi administrator password. Will be updated at each container start."
+}
+
+variable "APPLICATION_ID" {
+  type        = string
+  description = "Application ID where policy need to be created"
+}
+
+variable "APPLICATION_SECRET" {
+  type        = string
+  description = "Application API key secret to give accès to the database and the bucket from the container"
+}
+
+variable "PROJECT_ID" {
+  type        = string
+  description = "Project ID where your resources will be created"
+}
+
+variable "REGISTRY_ENDPOINT" {
+  type        = string
+  description = "Container Registry endpoint where your application container is stored"
 }
 
 locals {
@@ -72,7 +71,7 @@ resource "scaleway_object_bucket_acl" "media_library_bucket_acl" {
 resource "scaleway_container_namespace" "main" {
   name        = local.appName
   description = "Namespace created for full serverless Website Content management System deployment"
-  project_id  = var.DEFAULT_PROJECT_ID
+  project_id  = var.PROJECT_ID
 }
 
 resource "scaleway_container" "main" {
@@ -93,7 +92,7 @@ resource "scaleway_container" "main" {
 
   environment_variables = {
     "DATABASE_CLIENT"   = "postgres",
-    "DATABASE_USERNAME" = var.DEFAULT_APPLICATION_ID,
+    "DATABASE_USERNAME" = var.APPLICATION_ID,
     "DATABASE_HOST"     = trimsuffix(trimprefix(regex(":\\/\\/.*:", scaleway_sdb_sql_database.database.endpoint), "://"), ":")
     "DATABASE_NAME"     = scaleway_sdb_sql_database.database.name,
     "DATABASE_PORT"     = trimprefix(regex(":[0-9]{1,5}", scaleway_sdb_sql_database.database.endpoint), ":"),
@@ -103,9 +102,9 @@ resource "scaleway_container" "main" {
     "BUCKET_REGION"     = scaleway_object_bucket.media_library_bucket.region
   }
   secret_environment_variables = {
-    "BUCKET_ACCESS_KEY"   = scaleway_iam_api_key.api_key.access_key
-    "BUCKET_SECRET_KEY"   = scaleway_iam_api_key.api_key.secret_key
-    "DATABASE_PASSWORD"   = scaleway_iam_api_key.api_key.secret_key,
+    "BUCKET_ACCESS_KEY"   = var.APPLICATION_SECRET
+    "BUCKET_SECRET_KEY"   = var.APPLICATION_SECRET
+    "DATABASE_PASSWORD"   = var.APPLICATION_SECRET,
     "ADMIN_PASSWORD"      = var.ADMIN_PASSWORD,
     "APP_KEYS"            = random_bytes.generated_secrets["app_keys"].base64,
     "API_TOKEN_SALT"      = random_bytes.generated_secrets["api_token_salt"].base64,
@@ -115,32 +114,17 @@ resource "scaleway_container" "main" {
   }
 }
 
-resource "scaleway_iam_policy" "db_access" {
-  name            = "${local.appName}-policy"
-  organization_id = var.DEFAULT_ORGANIZATION_ID
-  description     = "Gives Website Content management System access to Serverless SQL Database"
-  application_id  = var.DEFAULT_APPLICATION_ID
-  rule {
-    project_ids          = [var.DEFAULT_PROJECT_ID]
-    permission_set_names = ["ServerlessSQLDatabaseReadWrite"]
-  }
-}
-
-resource "scaleway_iam_api_key" "api_key" {
-  application_id = var.DEFAULT_APPLICATION_ID
-}
-
 resource "scaleway_sdb_sql_database" "database" {
   name       = local.appName
-  project_id = var.DEFAULT_PROJECT_ID
+  project_id = var.PROJECT_ID
   min_cpu    = 0
   max_cpu    = 8
 }
 
 output "database_connection_string" {
   value = format("postgres://%s:%s@%s",
-    var.DEFAULT_APPLICATION_ID,
-    scaleway_iam_api_key.api_key.secret_key,
+    var.APPLICATION_ID,
+    var.APPLICATION_SECRET,
     trimprefix(scaleway_sdb_sql_database.database.endpoint, "postgres://"),
   )
   sensitive = true
