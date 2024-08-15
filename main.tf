@@ -34,9 +34,14 @@ variable "APPLICATION_ID" {
   description = "Application ID where policy need to be created"
 }
 
-variable "APPLICATION_SECRET" {
+variable "APPLICATION_ACCESS_KEY" {
   type        = string
-  description = "Application API key secret to give accès to the database and the bucket from the container"
+  description = "Application API access key to give accès to the database and the bucket from the container"
+}
+
+variable "APPLICATION_SECRET_KEY" {
+  type        = string
+  description = "Application API secret key to give accès to the database and the bucket from the container"
 }
 
 variable "PROJECT_ID" {
@@ -102,9 +107,9 @@ resource "scaleway_container" "main" {
     "BUCKET_REGION"     = scaleway_object_bucket.media_library_bucket.region
   }
   secret_environment_variables = {
-    "BUCKET_ACCESS_KEY"   = var.APPLICATION_SECRET
-    "BUCKET_SECRET_KEY"   = var.APPLICATION_SECRET
-    "DATABASE_PASSWORD"   = var.APPLICATION_SECRET,
+    "BUCKET_ACCESS_KEY"   = var.APPLICATION_ACCESS_KEY
+    "BUCKET_SECRET_KEY"   = var.APPLICATION_SECRET_KEY
+    "DATABASE_PASSWORD"   = var.APPLICATION_SECRET_KEY,
     "ADMIN_PASSWORD"      = var.ADMIN_PASSWORD,
     "APP_KEYS"            = random_bytes.generated_secrets["app_keys"].base64,
     "API_TOKEN_SALT"      = random_bytes.generated_secrets["api_token_salt"].base64,
@@ -124,7 +129,7 @@ resource "scaleway_sdb_sql_database" "database" {
 output "database_connection_string" {
   value = format("postgres://%s:%s@%s",
     var.APPLICATION_ID,
-    var.APPLICATION_SECRET,
+    var.APPLICATION_SECRET_KEY,
     trimprefix(scaleway_sdb_sql_database.database.endpoint, "postgres://"),
   )
   sensitive = true

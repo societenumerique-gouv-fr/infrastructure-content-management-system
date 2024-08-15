@@ -108,7 +108,8 @@ Simply push the changes to the `main` branch, to apply the next state of the inf
       - `ADMIN_EMAIL` `terraform` Strapi administrator email: any email you want to log into Strapi admin panel
       - `ADMIN_PASSWORD` `terraform` `sensitive` Strapi administrator password: A secure password you will need to log into Strapi admin panel
       - `APPLICATION_ID` `terraform` Scaleway appication id: created by ANCT Scaleway administrator
-      - `APPLICATION_SECRET` `terraform` `sensitive` Scaleway appication secret: created by ANCT Scaleway administrator
+      - `APPLICATION_ACCESS_KEY` `terraform` Scaleway application access key: created by ANCT Scaleway administrator
+      - `APPLICATION_SECRET_KEY` `terraform` `sensitive` Scaleway application secret key: created by ANCT Scaleway administrator
       - `PROJECT_ID` `terraform` Scaleway project id: [available in Societe Numerique project dashboard settings](https://console.scaleway.com/project/settings)
       - `REGISTRY_ENDPOINT` `terraform` Scaleway registry endpoint: get the endpoint after [creating docker registry and push the initial image](#create-docker-registry-and-push-the-initial-image)
       - `SCW_ACCESS_KEY` `env` Scaleway access key: [generate API key for your user](https://console.scaleway.com/iam/users)
